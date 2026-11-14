@@ -7,6 +7,8 @@ NAME='herdr-windows-bridge'
 SOCKET='bridge.sock'
 LIMIT=262144
 GRACE=3.0
+PUBLISHER_WAIT_SECONDS=10.0
+PUBLISHER_POLL_SECONDS=0.1
 LINUX="sh -c 'p=$(command -v herdr-core) || p=$HOME/.local/bin/herdr-core; [ -x \"$p\" ] || { echo \"herdr-core is not installed here\" >&2; exit 127; }; HC_SESSION=default exec \"$p\" connect'"
 WINDOWS='cmd /d /c "if exist .\\AppData\\Local\\Programs\\herdr-core\\herdr-core.exe (.\\AppData\\Local\\Programs\\herdr-core\\herdr-core.exe connect --session default) else (echo herdr-core is not installed here 1>&2 & exit /b 127)"'
 ALLOWED=frozenset((LINUX,LINUX.replace('HC_SESSION=default ',''),WINDOWS))
@@ -113,10 +115,14 @@ def publish(dfd,path):
             except FileNotFoundError: pass
         os.close(lock)
 def via(dfd,path):
-    until=time.monotonic()+10
+    until=time.monotonic()+PUBLISHER_WAIT_SECONDS
     while True:
         remaining=until-time.monotonic()
-        if remaining<=0: raise TimeoutError('publisher wait expired')
+        if remaining<=0:
+            raise TimeoutError(
+                f'publisher socket {SOCKET!r} did not appear within '
+                f'{PUBLISHER_WAIT_SECONDS:g}s; check the session publisher launcher'
+            )
         s=socket.socket(socket.AF_UNIX)
         s.settimeout(min(0.25,remaining))
         try:
@@ -125,7 +131,7 @@ def via(dfd,path):
         except OSError as exc:
             s.close()
             if not isinstance(exc,TimeoutError) and exc.errno not in (errno.ENOENT,errno.ECONNREFUSED,errno.EAGAIN): raise
-            time.sleep(min(0.1,max(0,until-time.monotonic())))
+            time.sleep(min(PUBLISHER_POLL_SECONDS,max(0,until-time.monotonic())))
         except BaseException:
             s.close(); raise
     with s: relay(s)
@@ -140,5 +146,5 @@ def main():
 if __name__=='__main__':
     try: main()
     except (OSError,RuntimeError) as exc:
-        print('herdr bridge stopped: '+type(exc).__name__,file=sys.stderr)
+        print('herdr bridge stopped: '+type(exc).__name__+': '+str(exc),file=sys.stderr)
         sys.exit(1)
