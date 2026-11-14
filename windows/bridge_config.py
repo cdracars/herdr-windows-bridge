@@ -22,7 +22,7 @@ def runtime_root() -> Path:
 
 
 def core_process_ids(status: object) -> tuple[int, int]:
-    """Return verified server/holder PIDs, or explain why no session is bridgeable."""
+    """Return verified server/holder PIDs or explain why no safe target exists."""
     if not isinstance(status, dict):
         raise RuntimeError("Herdr returned an invalid server status object")
     server_pid = status.get("pid")
@@ -30,7 +30,18 @@ def core_process_ids(status: object) -> tuple[int, int]:
         raise RuntimeError("Herdr server status has no valid core PID")
     holder = status.get("holder")
     if not isinstance(holder, dict):
-        raise RuntimeError("No active Herdr holder is attached. Open an existing Herdr session, then start the bridge again.")
+        holders = status.get("holders")
+        candidates = [
+            item for item in holders
+            if isinstance(item, dict)
+            and type(item.get("pid")) is int and item["pid"] > 0
+            and type(item.get("terminals")) is int and item["terminals"] > 0
+        ] if isinstance(holders, list) else []
+        if not candidates:
+            raise RuntimeError("No active Herdr holder with live terminals was found; keep the existing Herdr session open and retry.")
+        if len(candidates) != 1:
+            raise RuntimeError("Multiple Herdr holders have live terminals; refusing to guess which holder to bridge.")
+        holder = candidates[0]
     holder_pid = holder.get("pid")
     if type(holder_pid) is not int or holder_pid <= 0:
         raise RuntimeError("Herdr holder status has no valid PID. Keep the existing Herdr session open and retry.")

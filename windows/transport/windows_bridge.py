@@ -139,11 +139,12 @@ def checked_core():
     rows = list(csv.reader(io.StringIO(identity.stdout.decode("utf-8", errors="replace"))))
     if not rows or rows[0][-1].strip() != SID:
         raise RuntimeError("unexpected Windows account")
-    out = subprocess.run([HC, "server", "status"], capture_output=True, timeout=5,
+    out = subprocess.run([HC, "server", "status", "--json"], capture_output=True, timeout=5,
         env=ENV, check=True, creationflags=NO_WINDOW)
     info = json.loads(out.stdout)
     server_pid, holder_pid = core_process_ids(info)
-    if info.get("core", {}).get("id") != CORE or (SERVER_PID is not None and server_pid != SERVER_PID):
+    core = info.get("core")
+    if not isinstance(core, dict) or core.get("id") != CORE or (SERVER_PID is not None and server_pid != SERVER_PID):
         raise RuntimeError("expected existing Windows core is absent or changed")
     if HOLDER_PID is not None and holder_pid != HOLDER_PID:
         raise RuntimeError("expected existing Windows holder changed")

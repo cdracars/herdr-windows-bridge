@@ -75,6 +75,19 @@ class CoreStatusTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "No active Herdr holder"):
             core_process_ids({"pid": 101, "holder": None})
 
+    def test_uses_unique_active_holder_when_current_holder_is_null(self):
+        status = {"pid": 33396, "holder": None, "holders": [
+            {"current": False, "instance": "example", "pid": 17988, "terminals": 12}
+        ]}
+        self.assertEqual(core_process_ids(status), (33396, 17988))
+
+    def test_multiple_active_holders_fail_closed(self):
+        status = {"pid": 33396, "holder": None, "holders": [
+            {"pid": 17988, "terminals": 12}, {"pid": 19000, "terminals": 2}
+        ]}
+        with self.assertRaisesRegex(RuntimeError, "Multiple Herdr holders"):
+            core_process_ids(status)
+
     def test_invalid_holder_pid_fails_closed(self):
         with self.assertRaisesRegex(RuntimeError, "no valid PID"):
             core_process_ids({"pid": 101, "holder": {"pid": None}})
