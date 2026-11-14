@@ -1,6 +1,6 @@
 # herdr-bridge
 
-A small native Windows controller for the existing, reviewed Herdr bridge. Version 0.2.0.
+A small native Windows controller for the existing, reviewed Herdr bridge. Version 0.2.1.
 
 ## Open
 

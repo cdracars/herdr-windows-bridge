@@ -11,15 +11,15 @@ import subprocess
 import sys
 import time
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 PROJECT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT))
 from bridge_config import load_bridge_config, runtime_root
 
 ROOT = runtime_root()
 TRANSPORT = ROOT / "windows_bridge.py"
-EXPECTED_HASH = "0c5e95dbbfcf7a4c0ead175235638fcf0563a718d4248de828b91d2be1ba890b"
-EXPECTED_CONFIG_HASH = "b1a2006c8cef14fb8271990b1983e88dd9b786a1300126451e03a6538f32ad92"
+EXPECTED_HASH = "fe67a717f0774c595c4d2cb2f4f11de32d172526305690beda9fbfd340a89f5e"
+EXPECTED_CONFIG_HASH = "681f2af0e113533d4a9d12f958e20f0f33dab4303de8ce8b04c3cadaba9549c2"
 PYTHON = Path(sys.executable)
 HERDR = Path(os.environ.get("HERDR_APP", ROOT.parent / "Programs" / "herdr-app" / "herdr-app.exe"))
 

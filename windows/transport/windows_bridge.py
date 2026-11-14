@@ -17,7 +17,7 @@ import time
 MODULE_DIR = Path(__file__).resolve().parent
 CONFIG_MODULE_DIR = MODULE_DIR if (MODULE_DIR / "bridge_config.py").exists() else MODULE_DIR.parent
 sys.path.insert(0, str(CONFIG_MODULE_DIR))
-from bridge_config import load_bridge_config, runtime_root
+from bridge_config import core_process_ids, load_bridge_config, runtime_root
 
 ROOT = runtime_root()
 CONFIG = load_bridge_config(ROOT)
@@ -142,17 +142,17 @@ def checked_core():
     out = subprocess.run([HC, "server", "status"], capture_output=True, timeout=5,
         env=ENV, check=True, creationflags=NO_WINDOW)
     info = json.loads(out.stdout)
-    if info.get("core", {}).get("id") != CORE or (SERVER_PID is not None and info.get("pid") != SERVER_PID):
+    server_pid, holder_pid = core_process_ids(info)
+    if info.get("core", {}).get("id") != CORE or (SERVER_PID is not None and server_pid != SERVER_PID):
         raise RuntimeError("expected existing Windows core is absent or changed")
-    if HOLDER_PID is not None and info.get("holder", {}).get("pid") != HOLDER_PID:
+    if HOLDER_PID is not None and holder_pid != HOLDER_PID:
         raise RuntimeError("expected existing Windows holder changed")
     return info
 
 def pin_existing_core():
     global SERVER_PID, HOLDER_PID, SERVER_HANDLE
     info = checked_core()
-    SERVER_PID = info["pid"]
-    HOLDER_PID = info["holder"]["pid"]
+    SERVER_PID, HOLDER_PID = core_process_ids(info)
     SERVER_HANDLE = _winapi.OpenProcess(0x00100000, False, SERVER_PID)
     checked_core()  # Same snapshot and still-live retained process, before any exposure.
 
@@ -298,8 +298,9 @@ def self_test():
     print(json.dumps({"binary_bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest(),
                       "binary_exact": True, "eof_closed": True}))
     info = checked_core()
+    server_pid, holder_pid = core_process_ids(info)
     print(json.dumps({"identity": "expected non-admin account", "core": CORE,
-                      "server_pid": info["pid"], "holder_pid": info["holder"]["pid"]}))
+                      "server_pid": server_pid, "holder_pid": holder_pid}))
 
 def main():
     global HAS_OWNED_LOCK, SERVER_HANDLE

@@ -21,6 +21,22 @@ def runtime_root() -> Path:
     return Path(local_app_data) / "HerdrBridge"
 
 
+def core_process_ids(status: object) -> tuple[int, int]:
+    """Return verified server/holder PIDs, or explain why no session is bridgeable."""
+    if not isinstance(status, dict):
+        raise RuntimeError("Herdr returned an invalid server status object")
+    server_pid = status.get("pid")
+    if type(server_pid) is not int or server_pid <= 0:
+        raise RuntimeError("Herdr server status has no valid core PID")
+    holder = status.get("holder")
+    if not isinstance(holder, dict):
+        raise RuntimeError("No active Herdr holder is attached. Open an existing Herdr session, then start the bridge again.")
+    holder_pid = holder.get("pid")
+    if type(holder_pid) is not int or holder_pid <= 0:
+        raise RuntimeError("Herdr holder status has no valid PID. Keep the existing Herdr session open and retry.")
+    return server_pid, holder_pid
+
+
 def load_bridge_config(root: Path | None = None) -> dict[str, str]:
     root = Path(root) if root is not None else runtime_root()
     config_path = Path(os.environ.get("HERDR_BRIDGE_CONFIG", root / "bridge.json"))

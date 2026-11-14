@@ -1,6 +1,9 @@
 import importlib.util
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import tempfile
+from bridge_config import core_process_ids
 import unittest
 from unittest import mock
 spec = importlib.util.spec_from_file_location("herdr_app", Path(__file__).with_name("herdr_bridge_app.py"))
@@ -63,6 +66,18 @@ class ActionTests(unittest.TestCase):
         with mock.patch.object(app,"read_status",return_value={"helper_pid":42}), mock.patch.object(app,"helper_locked",return_value=False), mock.patch.object(app,"python_process_alive") as alive:
             result=app.Controller().snapshot()
             self.assertFalse(result[2]);alive.assert_not_called()
+
+class CoreStatusTests(unittest.TestCase):
+    def test_returns_server_and_holder_pids(self):
+        self.assertEqual(core_process_ids({"pid": 101, "holder": {"pid": 202}}), (101, 202))
+
+    def test_missing_holder_fails_with_actionable_message(self):
+        with self.assertRaisesRegex(RuntimeError, "No active Herdr holder"):
+            core_process_ids({"pid": 101, "holder": None})
+
+    def test_invalid_holder_pid_fails_closed(self):
+        with self.assertRaisesRegex(RuntimeError, "no valid PID"):
+            core_process_ids({"pid": 101, "holder": {"pid": None}})
 
 if __name__=="__main__":
     unittest.main(verbosity=2)
