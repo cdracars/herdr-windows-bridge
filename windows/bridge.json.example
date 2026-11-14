@@ -1,0 +1,10 @@
+{
+  "core_id": "00000000000000000000000000000000",
+  "user_sid": "S-1-5-21-0-0-0-0",
+  "pipe_path": "\\\\.\\pipe\\herdr-core-USER-default.sock",
+  "ssh_host": "192.0.2.10",
+  "ssh_user": "vmuser",
+  "ssh_key_path": "%USERPROFILE%\\.ssh\\id_ed25519_herdr_vm",
+  "known_hosts_path": "%USERPROFILE%\\.ssh\\known_hosts_herdr_vm",
+  "remote_command": "python3 -I /home/vmuser/.local/lib/herdr-windows-bridge/vm_bridge.py publish"
+}

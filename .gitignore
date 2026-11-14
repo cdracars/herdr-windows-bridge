@@ -1,0 +1,4 @@
+windows/__pycache__/
+windows/transport/__pycache__/
+windows/bridge.json
+windows/bridge.local.json
