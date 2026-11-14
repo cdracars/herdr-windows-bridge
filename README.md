@@ -12,6 +12,8 @@ The relay enforces a fixed UID, private directory/socket permissions, same-UID p
 
 The transport has no supervisor or health/restart integration in this repository yet. If the publisher process is absent, `via` times out. The initial source import includes the installed implementation and its existing regression tests; the next change should make publisher startup, single-instance ownership, reconnect behavior, and health status explicit.
 
+HerdR's `--via` contract appends the remote command line as the final argument. This implementation checks that argument against the allowlist, then waits for the publisher socket; it does not launch the remote command itself. The publisher's upstream stdio owner and its startup hook must be identified before adding a supervisor, so a service does not report a healthy socket while disconnected from Windows.
+
 ## Files
 
 - `vm_bridge.py` — current installed transport implementation.
